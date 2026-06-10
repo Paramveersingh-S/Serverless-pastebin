@@ -1,0 +1,2 @@
+# Boto3 is included in the Lambda runtime, no need to include it here
+# which keeps the deployment package size extremely small.

@@ -41,3 +41,12 @@ module "iam" {
   dynamodb_table_arn = module.database.table_arn
 }
 
+module "api" {
+  source = "./modules/api"
+  project_name        = var.project_name
+  environment         = var.environment
+  dynamodb_table_name = module.database.table_name
+  creator_role_arn    = module.iam.creator_role_arn
+  retriever_role_arn  = module.iam.retriever_role_arn
+}
+
