@@ -57,4 +57,19 @@ module "cdn" {
   api_endpoint = module.api.api_endpoint
 }
 
+module "monitoring" {
+  source = "./modules/monitoring"
+  project_name        = var.project_name
+  environment         = var.environment
+  aws_region          = var.aws_region
+  dynamodb_table_name = module.database.table_name
+  alert_email         = "" # Update with real email in tfvars
+}
+
+module "security" {
+  source = "./modules/security"
+  project_name = var.project_name
+  environment  = var.environment
+}
+
 

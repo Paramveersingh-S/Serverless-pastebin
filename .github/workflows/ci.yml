@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest moto boto3 flake8
+    - name: Lint with flake8
+      run: |
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Test with pytest
+      run: |
+        pytest src/
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: "1.5.0"
+    - name: Terraform Format
+      working-directory: ./terraform
+      run: terraform fmt -check -recursive
+    - name: Terraform Init
+      working-directory: ./terraform
+      run: terraform init -backend=false
+    - name: Terraform Validate
+      working-directory: ./terraform
+      run: terraform validate
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Bandit
+      run: pip install bandit
+    - name: Run Bandit
+      run: bandit -r src/
+    # In a real setup, we would add Checkov here for Terraform scanning

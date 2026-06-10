@@ -1,0 +1,37 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - uses: actions/checkout@v3
+    
+    # - name: Configure AWS credentials via OIDC
+    #   uses: aws-actions/configure-aws-credentials@v2
+    #   with:
+    #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+    #     aws-region: us-east-1
+        
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      
+    - name: Terraform Init & Apply
+      working-directory: ./terraform
+      run: |
+        echo "Terraform apply would run here"
+        # terraform init
+        # terraform apply -auto-approve -var="environment=dev"
+
+    - name: Deploy Frontend
+      run: |
+        echo "Frontend sync would run here"
+        # ./scripts/upload_frontend.sh dev
