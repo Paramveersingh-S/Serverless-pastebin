@@ -4,7 +4,7 @@
 graph TD
     User([User / Browser])
     
-    subedge [AWS Cloud]
+    subgraph AWS Cloud
         CF[CloudFront CDN]
         S3[S3 Bucket - Static Frontend]
         API[API Gateway HTTP API]

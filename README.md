@@ -29,6 +29,20 @@ See [Architecture Diagrams](docs/architecture.md) for full Mermaid sequence and 
 | **IaC** | Terraform | Industry standard, modular, multi-cloud capability. |
 | **CI/CD** | GitHub Actions | Native OIDC support with AWS (no long-lived keys). |
 
+## Local Development with Floci
+To avoid AWS costs during development, this project supports **Floci**, a fast, zero-config local cloud emulator. Floci mocks AWS services locally (DynamoDB, Lambda, API Gateway, S3, CloudFront) so you can run `terraform apply` completely offline.
+
+1. **Install Floci CLI** (Windows PowerShell):
+   ```powershell
+   iwr -UseBasicParsing https://floci.io/install.ps1 | iex
+   ```
+2. **Start the Emulator**:
+   ```bash
+   floci start
+   ```
+3. **Configure AWS Provider**: 
+   The `terraform/main.tf` is pre-configured to override AWS endpoints and point them to `http://localhost:4566`. Ensure you use mock access keys (`test`/`test`) when testing locally.
+
 ## Quick Start
 1. Clone the repository.
 2. Navigate to `/terraform` and run `terraform init`.
