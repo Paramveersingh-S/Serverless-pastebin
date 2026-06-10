@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverless Pastebin</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --surface: #2a2a2a;
+            --text: #f0f0f0;
+            --primary: #4CAF50;
+            --primary-hover: #45a049;
+            --border: #444;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 { margin-top: 0; }
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: #111;
+            color: #0f0;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            align-items: center;
+        }
+        select, button {
+            padding: 10px 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        select { background: var(--surface); border: 1px solid var(--border); }
+        button:hover { background: var(--primary-hover); }
+        #error { color: #ff5555; margin-top: 10px; }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #111;
+            border: 1px dashed var(--primary);
+            border-radius: 4px;
+            display: none;
+        }
+        #result a { color: var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <h1>Serverless Pastebin</h1>
+        <div id="create-view">
+            <textarea id="content" placeholder="Paste your code or text here..."></textarea>
+            <div class="controls">
+                <select id="language">
+                    <option value="plaintext">Plain Text</option>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="json">JSON</option>
+                </select>
+                <button onclick="createPaste()" id="btn-submit">Create Paste</button>
+            </div>
+            <div id="error"></div>
+            <div id="result">
+                Paste created! URL: <a href="#" id="result-link"></a>
+            </div>
+        </div>
+
+        <div id="read-view" style="display: none;">
+            <p><strong>Language:</strong> <span id="read-lang"></span> | <strong>Expires:</strong> <span id="read-expires"></span></p>
+            <textarea id="read-content" readonly></textarea>
+            <div class="controls">
+                <button onclick="window.location.href='/'">New Paste</button>
+            </div>
+            <div id="read-error" style="color: #ff5555; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/pastes';
+        
+        async function init() {
+            // Check if there is a paste ID in the URL path (e.g., /abc12)
+            const path = window.location.pathname;
+            if (path.length > 1 && path !== '/index.html') {
+                const pasteId = path.substring(1);
+                await loadPaste(pasteId);
+            }
+        }
+
+        async function createPaste() {
+            const content = document.getElementById('content').value;
+            const language = document.getElementById('language').value;
+            const btn = document.getElementById('btn-submit');
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            const resultLink = document.getElementById('result-link');
+
+            if (!content.trim()) {
+                errorDiv.innerText = "Content cannot be empty.";
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Creating...';
+            errorDiv.innerText = '';
+            resultDiv.style.display = 'none';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, language, ttl_days: 30 })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to create paste');
+                }
+
+                const url = window.location.origin + '/' + data.paste_id;
+                resultLink.href = url;
+                resultLink.innerText = url;
+                resultDiv.style.display = 'block';
+
+            } catch (err) {
+                errorDiv.innerText = err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Create Paste';
+            }
+        }
+
+        async function loadPaste(pasteId) {
+            document.getElementById('create-view').style.display = 'none';
+            document.getElementById('read-view').style.display = 'block';
+            const errorDiv = document.getElementById('read-error');
+            
+            try {
+                const res = await fetch(`${API_URL}/${pasteId}`);
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to load paste');
+                }
+
+                document.getElementById('read-lang').innerText = data.language;
+                document.getElementById('read-expires').innerText = new Date(data.expires_at * 1000).toLocaleString();
+                document.getElementById('read-content').value = data.content;
+
+            } catch (err) {
+                errorDiv.innerText = err.message;
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

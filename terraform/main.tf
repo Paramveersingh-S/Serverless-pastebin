@@ -50,3 +50,11 @@ module "api" {
   retriever_role_arn  = module.iam.retriever_role_arn
 }
 
+module "cdn" {
+  source = "./modules/cdn"
+  project_name = var.project_name
+  environment  = var.environment
+  api_endpoint = module.api.api_endpoint
+}
+
+
